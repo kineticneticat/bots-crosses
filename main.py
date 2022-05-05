@@ -3,17 +3,28 @@ import json
 
 
 text = ''
+turn = 'x'
 
 
 # Authenticate to Twitter
-auth = tweepy.OAuthHandler("XNuI1ic0dewKKe9HhfWXZGhqz", "ZcQUqfW1gpEGznJAQsYupxvrxp6DWTZhZs8WX6thlCrrfAZ7uR")
-auth.set_access_token("1488876360705654794-AcVkOkoMmqEKfZaLrInqTlekGs4ZBj", "CuGpmf2THPyBnPbhLEKU9Tvbj1FrMbz4ULF5K3r6SXWHJ")
+auth = tweepy.OAuth1UserHandler('plBbHFBVp2CnGVT8vWM3DNup2', 'R2drRU7IUxKBjnZsvPtiVBkNm5DO7FBZclwHGnJDTzvOPN5dfz', access_token='1488876360705654794-e6BW9ypcmHBXOf1h5KI1HipeC1FKvb', access_token_secret='dacLACy1o4cNAYXXPdJGpIlNytl5QOpY3Kb1tNKPFHYsz')
+auth.set_access_token('1488876360705654794-e6BW9ypcmHBXOf1h5KI1HipeC1FKvb', 'dacLACy1o4cNAYXXPdJGpIlNytl5QOpY3Kb1tNKPFHYsz')
+client = tweepy.Client(bearer_token='AAAAAAAAAAAAAAAAAAAAANFGYwEAAAAAuf4iuc36ULEKbKlUT3z07RO245E%3DHaabvLcYQEwVZlOJI3HSUqpOhGzksDz4AAYgefPUfPsKbRAgHA', consumer_key='plBbHFBVp2CnGVT8vWM3DNup2', consumer_secret='R2drRU7IUxKBjnZsvPtiVBkNm5DO7FBZclwHGnJDTzvOPN5dfz', access_token='1488876360705654794-e6BW9ypcmHBXOf1h5KI1HipeC1FKvb', access_token_secret='dacLACy1o4cNAYXXPdJGpIlNytl5QOpY3Kb1tNKPFHYsz')
 
 api = tweepy.API(auth)
-client = tweepy.Client()
+
 
 api.verify_credentials()
 
+def get_last_tweet_likes():
+    tweet = api.user_timeline(user_id = 'BotsCrosses', count = 1)[0]
+    likes = client.get_liking_users(id=tweet.id)
+    return likes.meta['result_count']
+
+def get_last_tweet_rts():
+    tweet = api.user_timeline(user_id = 'BotsCrosses', count = 1)[0]
+    rts = client.get_retweeters(id=tweet.id)
+    return rts.meta['result_count']
 
 
 unicode = {
@@ -28,71 +39,87 @@ unicode = {
 }
 
 class cell():
-    def __init__(self, x, y, index, value):
+    def __init__(self, x, y, index):
         self.x = x
         self.y = y
         self.index = index
-        self.value = value
+        self.value = unicode['black']
+    def x(self):
+        self.value = unicode['blue']
+    def o(self):
+        self.value = unicode['yellow']
 
 cells = [
-    [cell(0, 0, 0, unicode['red']), cell(1, 0, 1, unicode['red']), cell(1, 0, 2, unicode['red'])],
-    [cell(0, 1, 3, unicode['red']), cell(1, 1, 4, unicode['red']), cell(2, 1, 5, unicode['red'])],
-    [cell(0, 2, 6, unicode['red']), cell(1, 2, 7, unicode['red']), cell(2, 2, 8, unicode['red'])]
+    [cell(0, 0, 0), cell(1, 0, 1), cell(1, 0, 2)],
+    [cell(0, 1, 3), cell(1, 1, 4), cell(2, 1, 5)],
+    [cell(0, 2, 6), cell(1, 2, 7), cell(2, 2, 8)]
 ]
 
 board = [
-    [cells[0][0].value, unicode['black'], cells[0][1].value, unicode['black'],cells[0][2].value],
-    [unicode['black'], unicode['black'], unicode['black'], unicode['black'], unicode['black']],
-    [cells[1][0].value, unicode['black'], cells[1][1].value, unicode['black'], cells[1][2].value],
-    [unicode['black'], unicode['black'], unicode['black'], unicode['black'], unicode['black']],
-    [cells[2][0].value, unicode['black'], cells[2][1].value, unicode['black'], cells[2][2].value],
+    [cells[0][0].value, cells[0][1].value, cells[0][2].value],
+    [cells[1][0].value, cells[1][1].value, cells[1][2].value],
+    [cells[2][0].value, cells[2][1].value, cells[2][2].value],
 ]
 
 def refresh():
     board = [
-    [cells[0][0].value, unicode['black'], cells[0][1].value, unicode['black'],cells[0][2].value],
-    [unicode['black'], unicode['black'], unicode['black'], unicode['black'], unicode['black']],
-    [cells[1][0].value, unicode['black'], cells[1][1].value, unicode['black'], cells[1][2].value],
-    [unicode['black'], unicode['black'], unicode['black'], unicode['black'], unicode['black']],
-    [cells[2][0].value, unicode['black'], cells[2][1].value, unicode['black'], cells[2][2].value],
+    [cells[0][0].value, cells[0][1].value, cells[0][2].value],
+    [cells[1][0].value, cells[1][1].value, cells[1][2].value],
+    [cells[2][0].value, cells[2][1].value, cells[2][2].value],
 ]
 
 def wait(minutes):
     import time
     time.sleep(minutes * 60)
 
+def get_loc():
+    y = get_last_tweet_likes() % 3
+    x = get_last_tweet_rts() % 3
+    return [x, y]
+
+def set_cells():
+  x = get_loc()[0]
+  y = get_loc()[1]
+  if turn == 'x':
+    cells[y][x].value = unicode['yellow']
+  print([x, y, cells[y][x].value])
+  
+
 def send():
+  
+    
     refresh()
-    text = ''
-    for row in board:
+    box = ''
+    
+    for row in cells:
         for col in row:
-            text += col
-        text += '\n'
+            box += col.value
+        box += '\n'
     with open('stats.json', 'r') as fr:
         fr = fr.read()
         data = json.loads(fr)
         data['rounds'] += 1
     with open('stats.json', 'w') as fw:
         fw.write(json.dumps(data))
-    
-    text += '\n'
-    text += 'Rounds: '
-    text += str(data['rounds'])
+
+    if data['rounds'] != 0:
+      set_cells()
+  
+    text = (
+    f'Bots & Crosses\n'
+    f'Rounds: {data["rounds"]}\n'
+    f'Turn: {turn}\n'
+    f'{box}'
+    )
     api.update_status(text)
     print(text)
-
-def get_loc():
-    like_dict = 
-
-    return []
+    for i in cells:
+      for j in i:
+        print([j, j.value])
 
 while True:
     send()
-    wait(10)
+    input()
 
-
-
-
-
-
-
+print(get_last_tweet_rts())
+print(get_last_tweet_likes())
