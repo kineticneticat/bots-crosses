@@ -17,14 +17,20 @@ api = tweepy.API(auth)
 api.verify_credentials()
 
 def get_last_tweet_likes():
+  try:
     tweet = api.user_timeline(user_id = 'BotsCrosses', count = 1)[0]
     likes = client.get_liking_users(id=tweet.id)
-    return likes.meta['result_count']
+  except IndexError:
+    return 0
+  return likes.meta['result_count']
 
 def get_last_tweet_rts():
+  try:
     tweet = api.user_timeline(user_id = 'BotsCrosses', count = 1)[0]
     rts = client.get_retweeters(id=tweet.id)
-    return rts.meta['result_count']
+  except IndexError:
+    return 0
+  return rts.meta['result_count']
 
 
 unicode = {
@@ -73,23 +79,29 @@ def wait(minutes):
     time.sleep(minutes * 60)
 
 def get_loc():
-    y = get_last_tweet_likes() % 3
-    x = get_last_tweet_rts() % 3
+    x = False
+    y = False
+    if get_last_tweet_likes() != 0: 
+      y = get_last_tweet_likes() % 3
+    if get_last_tweet_rts() != 0: 
+      x = get_last_tweet_rts() % 3
     return [x, y]
 
 def set_cells():
+  print('a')
   x = get_loc()[0]
   y = get_loc()[1]
-  if turn == 'x':
+  if turn == 'x' and x and y:
     cells[y][x].value = unicode['yellow']
-  print([x, y, cells[y][x].value])
+  print(['debug', x, y, cells[y][x].value])
   
 
 def send():
   
     
-    refresh()
+    
     box = ''
+    report = ''
     
     for row in cells:
         for col in row:
@@ -102,20 +114,25 @@ def send():
     with open('stats.json', 'w') as fw:
         fw.write(json.dumps(data))
 
-    if data['rounds'] != 0:
-      set_cells()
-  
+    # if (get_last_tweet_likes() != 0 and get_last_tweet_rts() != 0) and (data['rounds'] != 0):
+    set_cells()
+    refresh()
+    if (get_last_tweet_likes() == 0 and get_last_tweet_rts() == 0) and (data['rounds'] != 0):
+      report = 'No Input, Restarting round!\n'
+    
     text = (
     f'Bots & Crosses\n'
     f'Rounds: {data["rounds"]}\n'
     f'Turn: {turn}\n'
+    f'{report}'
     f'{box}'
     )
-    api.update_status(text)
     print(text)
+    api.update_status(text)
     for i in cells:
       for j in i:
         print([j, j.value])
+    
 
 while True:
     send()
